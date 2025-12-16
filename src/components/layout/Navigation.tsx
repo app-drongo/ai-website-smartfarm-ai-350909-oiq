@@ -2,20 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu, X, Leaf } from 'lucide-react';
 import { useSmartNavigation } from '@/hooks/useSmartNavigation';
 
 const DEFAULT_NAVIGATION = {
-  brand: 'SmartFarm AI',
-  brandHref: '/',
-  items: [
-    { label: 'Home', href: '#hero' },
-    { label: 'About', href: '#about' },
-    { label: 'Testimonials', href: '#testimonials' },
-    { label: 'Pricing', href: '/pricing' },
+  brand: {
+    name: 'SmartFarm AI',
+    href: '/',
+    icon: 'leaf',
+  },
+  links: [
+    { name: 'Home', href: '/' },
+    { name: 'About', href: '#about' },
+    { name: 'Testimonials', href: '#testimonials' },
+    { name: 'Pricing', href: '/pricing' },
+    { name: 'Contact', href: '#contact' },
   ],
-  ctaText: 'Get Started',
-  ctaHref: '/get-started',
+  cta: {
+    text: 'Get Started',
+    href: '/get-started',
+  },
 } as const;
 
 type NavigationProps = Partial<typeof DEFAULT_NAVIGATION>;
@@ -30,112 +37,119 @@ export default function Navigation(props: NavigationProps) {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleNavClick = (href: string) => {
-    navigate(href);
+  const handleLinkClick = (href: string) => {
     setIsOpen(false);
+    navigate(href);
   };
 
-  const handleCtaClick = () => {
-    navigate(config.ctaHref);
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'leaf':
+        return Leaf;
+      default:
+        return Leaf;
+    }
   };
+
+  const IconComponent = getIcon(config.brand.icon);
 
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm'
+          ? 'bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm'
           : 'bg-transparent'
       }`}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand */}
-          <div className="flex-shrink-0">
-            <button
-              onClick={() => handleNavClick(config.brandHref)}
-              data-editable-href="brandHref"
-              data-href={config.brandHref}
-              className="text-xl font-bold text-foreground hover:text-primary transition-colors"
-            >
-              <span data-editable="brand">{config.brand}</span>
-            </button>
-          </div>
+          <button
+            onClick={() => handleLinkClick(config.brand.href)}
+            data-editable-href="brand.href"
+            data-href={config.brand.href}
+            className="flex items-center gap-2 font-bold text-xl text-foreground hover:text-primary transition-colors"
+          >
+            <div className="p-1.5 bg-primary/10 rounded-lg">
+              <IconComponent className="h-6 w-6 text-primary" />
+            </div>
+            <span data-editable="brand.name">{config.brand.name}</span>
+          </button>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
-              {config.items.map((item, idx) => (
+          <div className="hidden md:flex items-center gap-8">
+            <div className="flex items-center gap-6">
+              {config.links.map((link, idx) => (
                 <button
                   key={idx}
-                  onClick={() => handleNavClick(item.href)}
-                  data-editable-href={`items[${idx}].href`}
-                  data-href={item.href}
-                  className="text-foreground hover:text-primary px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-accent/50 rounded-md"
+                  onClick={() => handleLinkClick(link.href)}
+                  data-editable-href={`links[${idx}].href`}
+                  data-href={link.href}
+                  className="text-muted-foreground hover:text-foreground transition-colors font-medium"
                 >
-                  <span data-editable={`items[${idx}].label`}>{item.label}</span>
+                  <span data-editable={`links[${idx}].name`}>{link.name}</span>
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* CTA Button */}
-          <div className="hidden md:block">
             <Button
-              onClick={handleCtaClick}
-              data-editable-href="ctaHref"
-              data-href={config.ctaHref}
+              onClick={() => handleLinkClick(config.cta.href)}
+              data-editable-href="cta.href"
+              data-href={config.cta.href}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              <span data-editable="ctaText">{config.ctaText}</span>
+              <span data-editable="cta.text">{config.cta.text}</span>
             </Button>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-foreground hover:text-primary"
-            >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 bg-background/95 backdrop-blur-sm border-t border-border/50 mt-2 rounded-lg">
-              {config.items.map((item, idx) => (
+          {/* Mobile Menu Button */}
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <div className="flex flex-col gap-6 mt-6">
+                {/* Mobile Brand */}
                 <button
-                  key={idx}
-                  onClick={() => handleNavClick(item.href)}
-                  data-editable-href={`items[${idx}].href`}
-                  data-href={item.href}
-                  className="text-foreground hover:text-primary block px-3 py-2 text-base font-medium w-full text-left transition-colors duration-200 hover:bg-accent/50 rounded-md"
+                  onClick={() => handleLinkClick(config.brand.href)}
+                  className="flex items-center gap-2 font-bold text-xl text-foreground"
                 >
-                  <span data-editable={`items[${idx}].label`}>{item.label}</span>
+                  <div className="p-1.5 bg-primary/10 rounded-lg">
+                    <IconComponent className="h-6 w-6 text-primary" />
+                  </div>
+                  <span data-editable="brand.name">{config.brand.name}</span>
                 </button>
-              ))}
-              <div className="pt-2">
+
+                {/* Mobile Links */}
+                <div className="flex flex-col gap-4">
+                  {config.links.map((link, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleLinkClick(link.href)}
+                      className="text-left text-lg text-muted-foreground hover:text-foreground transition-colors py-2"
+                    >
+                      <span data-editable={`links[${idx}].name`}>{link.name}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Mobile CTA */}
                 <Button
-                  onClick={handleCtaClick}
-                  data-editable-href="ctaHref"
-                  data-href={config.ctaHref}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  onClick={() => handleLinkClick(config.cta.href)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 mt-4"
                 >
-                  <span data-editable="ctaText">{config.ctaText}</span>
+                  <span data-editable="cta.text">{config.cta.text}</span>
                 </Button>
               </div>
-            </div>
-          </div>
-        )}
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </nav>
   );
